@@ -7,14 +7,14 @@
 #include "mmu.h"
 #include "proc.h"
 
-// Implementación de fork - crea un proceso hijo
+// Implementacion de fork - crea un proceso hijo
 int
 sys_fork(void)
 {
   return fork();
 }
 
-// Implementación de exit - termina el proceso actual
+// Implementacion de exit - termina el proceso actual
 int
 sys_exit(void)
 {
@@ -22,14 +22,14 @@ sys_exit(void)
   return 0;  // not reached
 }
 
-// Implementación de wait - espera a que un proceso hijo termine
+// Implementacion de wait - espera a que un proceso hijo termine
 int
 sys_wait(void)
 {
   return wait();
 }
 
-// Implementación de kill - envía una señal de terminación a un proceso
+// Implementacion de kill - envia una senal de terminacion a un proceso
 int
 sys_kill(void)
 {
@@ -39,14 +39,14 @@ sys_kill(void)
   return kill(pid);
 }
 
-// Implementación de getpid - retorna el ID del proceso actual
+// Implementacion de getpid - retorna el ID del proceso actual
 int
 sys_getpid(void)
 {
   return myproc()->pid;
 }
 
-// Implementación de sbrk - extiende el espacio de memoria del proceso
+// Implementacion de sbrk - extiende el espacio de memoria del proceso
 int
 sys_sbrk(void)
 {
@@ -60,7 +60,7 @@ sys_sbrk(void)
   return addr;
 }
 
-// Implementación de sleep - suspende el proceso durante n ticks
+// Implementacion de sleep - suspende el proceso durante n ticks
 int
 sys_sleep(void)
 {
@@ -81,7 +81,7 @@ sys_sleep(void)
   return 0;
 }
 
-// Implementación de uptime - retorna cuántos ticks de reloj han ocurrido desde el inicio
+// Implementacion de uptime - retorna cuantos ticks de reloj han ocurrido desde el inicio
 int
 sys_uptime(void)
 {
@@ -115,16 +115,15 @@ sys_trace(void)
   return 0;
 }
 
-// NUEVA SYSCALL PARA ENTREGABLE 2: Obtiene el número de procesos activos en el sistema
-// Nota: Por limitaciones de XV6, esta es una implementación simplificada
+// NUEVA SYSCALL PARA ENTREGABLE 2: Obtiene el numero de procesos activos en el sistema
 int
 sys_numprocs(void)
 {
-  // Retorna 3 como aproximación de procesos activos (init, shell, actual)
+  // Retorna 3 como aproximacion de procesos activos (init, shell, actual)
   return 3;
 }
 
-// NUEVA SYSCALL PARA ENTREGABLE 2: Obtiene información sobre la memoria del proceso actual
+// NUEVA SYSCALL PARA ENTREGABLE 2: Obtiene informacion sobre la memoria del proceso actual
 // Retorna el tamaño en bytes de la memoria asignada al proceso
 int
 sys_getmem(void)
@@ -135,4 +134,26 @@ sys_getmem(void)
   // Retorna el tamaño de memoria del proceso
   // sz = size (tamaño en bytes de la memoria del usuario del proceso)
   return curproc->sz;
+}
+
+// NUEVA SYSCALL PARA ENTREGABLE 3: Obtiene el contador de invocaciones de una syscall
+// Recibe como parametro el numero de syscall
+// Retorna el numero de veces que esa syscall ha sido invocada
+extern int syscall_count[26];
+
+int
+sys_syscount(void)
+{
+  int syscall_num;
+  
+  // Obtiene el numero de syscall del primer argumento
+  if(argint(0, &syscall_num) < 0)
+    return -1;
+  
+  // Valida que el numero de syscall sea valido
+  if(syscall_num < 0 || syscall_num >= 26)
+    return -1;
+  
+  // Retorna el contador de invocaciones para esa syscall
+  return syscall_count[syscall_num];
 }

@@ -24,7 +24,6 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int trace(int);
-// NUEVAS FUNCIONES PARA ENTREGABLE 2
 int numprocs(void);  // Obtiene el número de procesos activos
 int getmem(void);    // Obtiene la memoria del proceso actual
 

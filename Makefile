@@ -178,6 +178,7 @@ UPROGS=\
 	_psmem\
 	_rm\
 	_sh\
+	_syscountcmd\
 	_trace\
 	_uptime\
 	_stressfs\

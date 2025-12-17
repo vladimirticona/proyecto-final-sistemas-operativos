@@ -8,13 +8,17 @@
 #include "syscall.h"
 
 // Usuario hace una llamada al sistema con INT T_SYSCALL.
-// El número de la syscall está en %eax.
-// Los argumentos están en el stack
+// El numero de la syscall esta en %eax.
+// Ahora los argumentos estan en el stack
 
-// VARIABLE GLOBAL PARA ACTIVAR/DESACTIVAR RASTREO
+// Variable para activar y desactivar
 int syscall_trace = 0;
 
-// Obtiene un entero de la dirección en el proceso actual
+// ARREGLO PARA CONTAR INVOCACIONES DE CADA SYSCALL (ENTREGABLE 3)
+// Mantiene el numero de veces que cada syscall ha sido invocada
+int syscall_count[26] = {0};  // 26 para cubrir todas las syscalls (0-25)
+
+// Obtiene un entero de la direccion en el proceso actual
 int
 fetchint(uint addr, int *ip)
 {
@@ -25,7 +29,7 @@ fetchint(uint addr, int *ip)
   return 0;
 }
 
-// Obtiene una cadena terminada en nulo de la dirección en el proceso actual
+// Obtiene una cadena terminada en nulo de la direccion en el proceso actual
 int
 fetchstr(uint addr, char **pp)
 {
@@ -43,14 +47,14 @@ fetchstr(uint addr, char **pp)
   return -1;
 }
 
-// Obtiene el argumento n-ésimo de la syscall como un entero
+// Obtiene el argumento n-esimo de la syscall como un entero
 int
 argint(int n, int *ip)
 {
   return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
-// Obtiene el argumento n-ésimo como un puntero
+// Obtiene el argumento n-esimo como un puntero
 int
 argptr(int n, char **pp, int size)
 {
@@ -64,7 +68,7 @@ argptr(int n, char **pp, int size)
   return 0;
 }
 
-// Obtiene el argumento n-ésimo como una cadena
+// Obtiene el argumento n-esimo como una cadena
 int
 argstr(int n, char **pp)
 {
@@ -100,6 +104,8 @@ extern int sys_trace(void);
 // NUEVAS SYSCALLS PARA ENTREGABLE 2
 extern int sys_numprocs(void);
 extern int sys_getmem(void);
+// NUEVA SYSCALL PARA ENTREGABLE 3
+extern int sys_syscount(void);
 
 // ARREGLO CON LOS NOMBRES DE TODAS LAS SYSCALLS (para rastreo)
 char *syscallnames[] = {
@@ -127,6 +133,7 @@ char *syscallnames[] = {
   [SYS_trace]   "trace",
   [SYS_numprocs] "numprocs",
   [SYS_getmem]   "getmem",
+  [SYS_syscount] "syscount",
 };
 
 // Tabla de punteros a las funciones de syscalls
@@ -156,6 +163,7 @@ static int (*syscalls[])(void) = {
   // NUEVAS SYSCALLS REGISTRADAS
   [SYS_numprocs] sys_numprocs,
   [SYS_getmem]   sys_getmem,
+  [SYS_syscount] sys_syscount,
 };
 
 // Manejador principal de las llamadas al sistema
@@ -165,14 +173,20 @@ syscall(void)
   int num;
   struct proc *curproc = myproc();
 
-  // Obtiene el número de syscall del registro eax
+  // Obtiene el numero de syscall del registro eax
   num = curproc->tf->eax;
   
-  // Ejecuta la syscall si es válida
+  // Ejecuta la syscall si es valida
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
     
-    // SI EL RASTREO ESTÁ ACTIVADO, MOSTRAR INFORMACIÓN DESPUÉS DE EJECUTAR
+    // INCREMENTA EL CONTADOR DE INVOCACIONES (ENTREGABLE 3)
+    // Esto cuenta cuantas veces se ha invocado cada syscall
+    if(num > 0 && num < 26) {
+      syscall_count[num]++;
+    }
+    
+    // SI EL RASTREO ESTA ACTIVADO, MOSTRAR INFORMACION DESPUES DE EJECUTAR
     if(syscall_trace && num > 0 && num < NELEM(syscallnames) && syscallnames[num]) {
       cprintf("[TRACE] PID %d: %s\n", curproc->pid, syscallnames[num]);
     }
