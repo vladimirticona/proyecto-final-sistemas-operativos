@@ -7,16 +7,14 @@
 #include "x86.h"
 #include "syscall.h"
 
-// User code makes a system call with INT T_SYSCALL.
-// System call number in %eax.
-// Arguments on the stack, from the user call to the C
-// library system call function. The saved user %esp points
-// to a saved program counter, and then the first argument.
+// Usuario hace una llamada al sistema con INT T_SYSCALL.
+// El número de la syscall está en %eax.
+// Los argumentos están en el stack
 
 // VARIABLE GLOBAL PARA ACTIVAR/DESACTIVAR RASTREO
 int syscall_trace = 0;
 
-// Fetch the int at addr from the current process.
+// Obtiene un entero de la dirección en el proceso actual
 int
 fetchint(uint addr, int *ip)
 {
@@ -27,9 +25,7 @@ fetchint(uint addr, int *ip)
   return 0;
 }
 
-// Fetch the nul-terminated string at addr from the current process.
-// Doesn't actually copy the string - just sets *pp to point at it.
-// Returns length of string, not including nul.
+// Obtiene una cadena terminada en nulo de la dirección en el proceso actual
 int
 fetchstr(uint addr, char **pp)
 {
@@ -47,16 +43,14 @@ fetchstr(uint addr, char **pp)
   return -1;
 }
 
-// Fetch the nth 32-bit system call argument.
+// Obtiene el argumento n-ésimo de la syscall como un entero
 int
 argint(int n, int *ip)
 {
   return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
-// Fetch the nth word-sized system call argument as a pointer
-// to a block of memory of size bytes.  Check that the pointer
-// lies within the process address space.
+// Obtiene el argumento n-ésimo como un puntero
 int
 argptr(int n, char **pp, int size)
 {
@@ -70,10 +64,7 @@ argptr(int n, char **pp, int size)
   return 0;
 }
 
-// Fetch the nth word-sized system call argument as a string pointer.
-// Check that the pointer is valid and the string is nul-terminated.
-// (There is no shared writable memory, so the string can't change
-// between this check and being used by the kernel.)
+// Obtiene el argumento n-ésimo como una cadena
 int
 argstr(int n, char **pp)
 {
@@ -83,6 +74,7 @@ argstr(int n, char **pp)
   return fetchstr(addr, pp);
 }
 
+// Declaraciones externas de las implementaciones de syscalls
 extern int sys_chdir(void);
 extern int sys_close(void);
 extern int sys_dup(void);
@@ -105,8 +97,11 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_trace(void);
+// NUEVAS SYSCALLS PARA ENTREGABLE 2
+extern int sys_numprocs(void);
+extern int sys_getmem(void);
 
-// ARREGLO CON LOS NOMBRES DE TODAS LAS SYSCALLS
+// ARREGLO CON LOS NOMBRES DE TODAS LAS SYSCALLS (para rastreo)
 char *syscallnames[] = {
   [SYS_fork]    "fork",
   [SYS_exit]    "exit",
@@ -130,8 +125,11 @@ char *syscallnames[] = {
   [SYS_mkdir]   "mkdir",
   [SYS_close]   "close",
   [SYS_trace]   "trace",
+  [SYS_numprocs] "numprocs",
+  [SYS_getmem]   "getmem",
 };
 
+// Tabla de punteros a las funciones de syscalls
 static int (*syscalls[])(void) = {
   [SYS_fork]    sys_fork,
   [SYS_exit]    sys_exit,
@@ -155,23 +153,29 @@ static int (*syscalls[])(void) = {
   [SYS_mkdir]   sys_mkdir,
   [SYS_close]   sys_close,
   [SYS_trace]   sys_trace,
+  // NUEVAS SYSCALLS REGISTRADAS
+  [SYS_numprocs] sys_numprocs,
+  [SYS_getmem]   sys_getmem,
 };
 
+// Manejador principal de las llamadas al sistema
 void
 syscall(void)
 {
   int num;
   struct proc *curproc = myproc();
 
+  // Obtiene el número de syscall del registro eax
   num = curproc->tf->eax;
   
-  // SI EL RASTREO ESTÁ ACTIVADO, MOSTRAR INFORMACIÓN DE LA SYSCALL
-  if(syscall_trace && num > 0 && num < NELEM(syscallnames) && syscallnames[num]) {
-    cprintf("[TRACE] PID %d: %s\n", curproc->pid, syscallnames[num]);
-  }
-
+  // Ejecuta la syscall si es válida
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     curproc->tf->eax = syscalls[num]();
+    
+    // SI EL RASTREO ESTÁ ACTIVADO, MOSTRAR INFORMACIÓN DESPUÉS DE EJECUTAR
+    if(syscall_trace && num > 0 && num < NELEM(syscallnames) && syscallnames[num]) {
+      cprintf("[TRACE] PID %d: %s\n", curproc->pid, syscallnames[num]);
+    }
   } else {
     cprintf("%d %s: unknown sys call %d\n",
             curproc->pid, curproc->name, num);

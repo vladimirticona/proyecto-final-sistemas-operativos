@@ -175,9 +175,11 @@ UPROGS=\
 	_ln\
 	_ls\
 	_mkdir\
+	_psmem\
 	_rm\
 	_sh\
 	_trace\
+	_uptime\
 	_stressfs\
 	_usertests\
 	_wc\
